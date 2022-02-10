@@ -8,9 +8,10 @@ const Keeper = ({ children }) => {
   const [forceUpdate, setForceUpdate] = useState(false)
   // 储存真实dom的对象
   const nodeRef = useRef({})
+    // 存储待缓存的组件的React Element
+    const virtualRef = useRef({})
+
   const activeKeyRef = useRef('')
-  // 存储待缓存的组件的virtual dom
-  const virtualRef = useRef({})
   // 监听
   const listensRef = useRef([])
 
@@ -20,30 +21,54 @@ const Keeper = ({ children }) => {
   const setNode = (key, node) => {
     nodeRef.current[key] = node
   }
-
-  const injectCache = (key, cache, listen) => {
-    activeKeyRef.current = key
-    virtualRef.current[key] = cache
-    listensRef.current.push({
-      [key]: listen
-    })
-    setForceUpdate(oldUpdate => !oldUpdate)
-  }
-
-  useEffect(() => {
-    // resolveRef.current(nodeRef.current[activeKeyRef.current])
-    // console.log(nodeRef.current)
-    console.log('listensRef.current', listensRef.current)
+  // 发布node dom
+  const issueListens = () => {
     if (listensRef.current.length) {
       listensRef.current.forEach(val => {
         if (val[activeKeyRef.current]) {
-          console.log(nodeRef.current)
           if (nodeRef.current[activeKeyRef.current]) {
             val[activeKeyRef.current](nodeRef.current[activeKeyRef.current])
           }
         }
       })
     }
+  }
+
+  const injectListens = (key, listen) => {
+    let isExit = false
+    listensRef.current = listensRef.current.map(val => {
+      if (Object.keys(val).find(item => item === key)) {
+        isExit = true
+        return {
+          [key]: listen
+        }
+      }
+      return val
+    })
+    if (!isExit) {
+      listensRef.current.push({
+        [key]: listen
+      })
+    }
+  }
+
+  // 注入react element缓存
+  // 首先判断是否已经存在缓存，存在则直接取用
+  // 不存的缓存则保存
+  const injectCache = (key, cache, listen) => {
+    activeKeyRef.current = key
+    injectListens(key, listen)
+    if (nodeRef.current[key]) { // 命中缓存
+      issueListens()
+      return
+    }
+    virtualRef.current[key] = cache
+    // 强制更新
+    setForceUpdate(oldUpdate => !oldUpdate)
+  }
+
+  useEffect(() => {
+    issueListens()
   }, [forceUpdate])
 
   // 获取缓存node

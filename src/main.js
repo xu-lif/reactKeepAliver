@@ -8,10 +8,26 @@ import { Keeper, Keep } from './index'
 const Count = () => {
   const [number, setNumber] = useState(0)
   return (
-   <div>{number}
+   <div
+    style={{
+      height: '200px',
+      width: '100px',
+      overflowY: 'auto',
+      border: '1px solid gray'
+    }}
+   >{number}
     <button onClick={() => {
       setNumber((oldNum => oldNum + 1))
     }}>点</button>
+    <select>
+      <option>1</option>
+      <option>2</option>
+      <option>3</option>
+    </select>
+    <div style={{
+      width: '100px',
+      height: '800px'
+    }}></div>
    </div>
   )
 }
@@ -21,6 +37,7 @@ const App = () => {
   return (
     <div>
       {show && <Keep keeperKey="count"><Count /></Keep>}
+      {/* {show && <Keep keeperKey="sec"><Count /></Keep>} */}
       <button onClick={() => setShow(oldShow => !oldShow)}>显示</button>
     </div>
   )
